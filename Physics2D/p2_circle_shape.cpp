@@ -2,6 +2,7 @@
 
 p2CircleShape::p2CircleShape() : p2Shape()
 {
+	type = circle;
 }
 
 p2CircleShape::p2CircleShape(float r) : p2CircleShape()
@@ -20,9 +21,11 @@ void p2CircleShape::ComputeMass(p2MassData* massData, float density) const
 
 void p2CircleShape::ComputeAABB(p2AABB* aabb, p2Transform wTransform, int childIndex) const
 {
-	float h_r = radius * 0.5f;
-	aabb->lowerBound.Set(-h_r, -h_r);
-	aabb->upperBound.Set(h_r, h_r);
+	aabb->lowerBound.Set(-radius, -radius);
+	aabb->upperBound.Set(radius, radius);
+
+	aabb->lowerBound += wTransform.position;
+	aabb->upperBound += wTransform.position;
 }
 
 bool p2CircleShape::RayCast(p2RayCastOutput* output, const p2RayCastInput& input, const p2Transform& transform, int childIndex) const

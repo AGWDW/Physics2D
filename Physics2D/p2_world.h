@@ -4,19 +4,26 @@
 #include "p2_circle_shape.h"
 #include "p2_settings.h"
 #include "p2_contact_manager.h"
+#include "p2_object.h"
 #include <array>
 
 class p2World
 {
 public:
-	p2World();
+	p2World(float gravity);
 	~p2World();
-	p2PolygonShape* CreatePolygonShape();
+	p2Object* CreateObject();
+	p2Rigidbody* CreateBody();
 	p2CircleShape* CreateCircleShape(float radius);
-	void Step();
+	void InitalizeVelocityConstraints(std::vector<p2Contact>& contacts, std::vector<b2ContactVelocityConstraint>& constraints) const;
+	void SolveVelocityConstraints(std::vector<b2ContactVelocityConstraint>& constraints) const;
+	void Step(float step);
 private:
-	std::array<p2CircleShape* , p2_Max_Polygons> shapes;
-	int shapeCount;
+	std::array<p2Object*, p2_Max_Objects> objects;
+	std::array<p2Rigidbody*, p2_Max_Objects> bodys;
+	std::array<p2CircleShape*, p2_Max_Shapes> shapes;
+	int objectCount, shapeCount, bodyCount;
 	p2ContactManager contactManager;
+	float gravity;
 };
 

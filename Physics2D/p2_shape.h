@@ -2,6 +2,7 @@
 #include "p2_math.h"
 #include "p2_AABB.h"
 
+class p2Object;
 struct p2MassData {
 	float mass;
 	p2Vec2 center;
@@ -16,9 +17,11 @@ public:
 		type_count
 	};
 
+	p2Object* parent;
+
 	 virtual ~p2Shape() { };
 
-	 p2Shape() : type(type_count) { };
+	 p2Shape() : type(type_count), parent(nullptr), radius(0) { };
 
 	 inline Type GetType() const { type; }
 

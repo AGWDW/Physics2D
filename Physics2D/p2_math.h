@@ -205,12 +205,12 @@ inline p2Vec2 operator -(const p2Vec2& a, const p2Vec2& b) {
 
 /// Scalar multliplication
 inline p2Vec2 operator *(const float& a, const p2Vec2& b) {
-	return p2Vec2(a + b.x, a + b.y);
+	return p2Vec2(a * b.x, a * b.y);
 }
 
 /// Scalar multliplication
 inline p2Vec2 operator *(const p2Vec2& a, const float& b) {
-	return p2Vec2(a.x + b, a.y + b);
+	return p2Vec2(a.x * b, a.y * b);
 }
 
 inline p2Vec2 p2Min(p2Vec2 a, p2Vec2 b) {
@@ -221,6 +221,14 @@ inline p2Vec2 p2Max(p2Vec2 a, p2Vec2 b) {
 	return p2Vec2(fmaxf(a.x, b.x), fmaxf(a.y, b.y));
 }
 
+inline float p2Min(float a, float b) {
+	return fminf(a, b);
+}
+
+inline float p2Max(float a, float b) {
+	return fmaxf(a, b);
+}
+
 inline p2Vec2 b2Mul(const p2Transform& T, const p2Vec2& v)
 {
 	float x = (T.rotation.c * v.x - T.rotation.s * v.y) + T.position.x;
@@ -229,8 +237,28 @@ inline p2Vec2 b2Mul(const p2Transform& T, const p2Vec2& v)
 	return p2Vec2(x, y);
 }
 
-// Perform the dot product on two vectors.
+/// Perform the dot product on two vectors.
 inline float p2Dot(const p2Vec2& a, const p2Vec2& b)
 {
 	return a.x * b.x + a.y * b.y;
+}
+
+/// Perform the cross product on two vectors. In 2D this produces a scalar.
+inline float p2Cross(const p2Vec2& a, const p2Vec2& b)
+{
+	return a.x * b.y - a.y * b.x;
+}
+
+/// Perform the cross product on a vector and a scalar. In 2D this produces
+/// a vector.
+inline p2Vec2 p2Cross(const p2Vec2& a, float s)
+{
+	return p2Vec2(s * a.y, -s * a.x);
+}
+
+/// Perform the cross product on a scalar and a vector. In 2D this produces
+/// a vector.
+inline p2Vec2 p2Cross(float s, const p2Vec2& a)
+{
+	return p2Vec2(-s * a.y, s * a.x);
 }

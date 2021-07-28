@@ -140,9 +140,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="p2_AABB.h" />
-    <ClInclude Include="p2_body.h" />
+    <ClInclude Include="p2_object.h" />
+    <ClInclude Include="p2_rigidbody.h" />
     <ClInclude Include="p2_circle_shape.h" />
     <ClInclude Include="p2_contact.h" />
+    <ClInclude Include="p2_contact_constraint.h" />
     <ClInclude Include="p2_contact_manager.h" />
     <ClInclude Include="p2_math.h" />
     <ClInclude Include="p2_polygon_shape.h" />
@@ -154,9 +156,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="p2_AABB.cpp" />
-    <ClCompile Include="p2_body.cpp" />
+    <ClCompile Include="p2_object.cpp" />
+    <ClCompile Include="p2_rigidbody.cpp" />
     <ClCompile Include="p2_circle_shape.cpp" />
     <ClCompile Include="p2_contact.cpp" />
+    <ClCompile Include="p2_contact_constraint.cpp" />
     <ClCompile Include="p2_contact_manager.cpp" />
     <ClCompile Include="p2_polygon_shape.cpp" />
     <ClCompile Include="p2_shape.cpp" />
