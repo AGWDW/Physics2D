@@ -1,5 +1,20 @@
 #pragma once
+#include <array>
 #include "p2_math.h"
+
+struct b2ContactPositionConstraint
+{
+	std::array<p2Vec2, p2_Max_Points> localPoints;
+	p2Vec2 localNormal;
+	p2Vec2 localPoint;
+	int indexA;
+	int indexB;
+	float invMassA, invMassB;
+	p2Vec2 localCenterA, localCenterB;
+	float invIA, invIB;
+	float radiusA, radiusB;
+	int pointCount;
+};
 
 struct b2ContactVelocityConstraint
 {

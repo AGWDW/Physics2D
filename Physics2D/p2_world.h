@@ -15,8 +15,9 @@ public:
 	p2Object* CreateObject();
 	p2Rigidbody* CreateBody();
 	p2CircleShape* CreateCircleShape(float radius);
-	void InitalizeVelocityConstraints(std::vector<p2Contact>& contacts, std::vector<b2ContactVelocityConstraint>& constraints) const;
+	void InitalizePositionalVelocityConstraints(std::vector<p2Contact>& contacts, std::vector<b2ContactVelocityConstraint>& constraintsVel, std::vector<b2ContactPositionConstraint>& constraintsPos) const;
 	void SolveVelocityConstraints(std::vector<b2ContactVelocityConstraint>& constraints) const;
+	bool SolvePositionalConstraints(std::vector<b2ContactPositionConstraint>& constraints) const;
 	void Step(float step);
 private:
 	std::array<p2Object*, p2_Max_Objects> objects;

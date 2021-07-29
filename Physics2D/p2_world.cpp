@@ -39,20 +39,13 @@ p2CircleShape* p2World::CreateCircleShape(float radius)
 	return shapes[shapeCount++];
 }
 
-void p2World::InitalizeVelocityConstraints(std::vector<p2Contact>& contacts, std::vector<b2ContactVelocityConstraint>& constraints) const
+void p2World::InitalizePositionalVelocityConstraints(std::vector<p2Contact>& contacts, std::vector<b2ContactVelocityConstraint>& constraintsVel, 
+	std::vector<b2ContactPositionConstraint>& constraintsPos) const
 {
-	/*
-	float invMassA, invMassB;
-	float invIA, invIB;
-	float friction;
-	float restitution;
-	float threshold;
-	float tangentSpeed;
-	int pointCount;
-	int contactIndex;
-	*/
 	for (int i = 0; i < contacts.size(); i++) {
-		b2ContactVelocityConstraint constraint;
+		b2ContactPositionConstraint constraintPos;
+		b2ContactVelocityConstraint constraintVel;
+
 		p2Contact& contact = contacts[i];
 
 		p2Vec2 cA = contact.transA.position;
@@ -70,21 +63,39 @@ void p2World::InitalizeVelocityConstraints(std::vector<p2Contact>& contacts, std
 		float& wA = contact.bodyA->angularVelocity;
 		float& wB = contact.bodyB->angularVelocity;
 
-		constraint.invMassA = mA;
-		constraint.invMassB = mB;
 
-		constraint.invIA = iA;
-		constraint.invIB = iB;
+		constraintPos.invMassA = mA;
+		constraintPos.invMassB = mB;
 
-		constraint.vA = &vA;
-		constraint.wB = &wB;
+		constraintPos.localCenterA.SetZero();
+		constraintPos.localCenterB.SetZero();
 
-		constraint.vA = &vA;
-		constraint.wB = &wB;
+		constraintPos.invIA = iA;
+		constraintPos.invIB = iB;
 
-		constraint.normal = contact.normal;
-		constraint.friction = contact.friction;
-		constraint.restitution = contact.restitution;
+		// constraintPos.localNormal = manifold->localNormal; not used for circles
+
+		constraintPos.localPoint = constraintPos.localCenterA; // center of A
+		constraintPos.pointCount = contact.numPoints;
+
+		constraintPos.radiusA = contact.shapeA->radius;
+		constraintPos.radiusB = contact.shapeB->radius;
+
+		constraintVel.invMassA = mA;
+		constraintVel.invMassB = mB;
+
+		constraintVel.invIA = iA;
+		constraintVel.invIB = iB;
+
+		constraintVel.vA = &vA;
+		constraintVel.wB = &wB;
+
+		constraintVel.vA = &vA;
+		constraintVel.wB = &wB;
+
+		constraintVel.normal = contact.normal;
+		constraintVel.friction = contact.friction;
+		constraintVel.restitution = contact.restitution;
 
 		for (int j = 0; j < contact.numPoints; j++) {
 			b2VelocityConstraintPoint constraintPoint;
@@ -115,10 +126,13 @@ void p2World::InitalizeVelocityConstraints(std::vector<p2Contact>& contacts, std
 			{
 				constraintPoint.velocityBias = -contact.restitution * vRel;
 			}
-			constraint.points[j] = constraintPoint;
-			constraint.pointCount = j + 1;
+			constraintVel.points[j] = constraintPoint;
+			constraintVel.pointCount = j + 1;
+
+			constraintPos.localPoints[j] = point.point;
 		}
-		constraints.push_back(constraint);
+		constraintsVel.push_back(constraintVel);
+		constraintsPos.push_back(constraintPos);
 	}
 }
 
@@ -160,11 +174,87 @@ void p2World::SolveVelocityConstraints(std::vector<b2ContactVelocityConstraint>&
 	}
 }
 
+bool p2World::SolvePositionalConstraints(std::vector<b2ContactPositionConstraint>& constraints) const
+{
+	float minSeparation = 0.0f;
+
+	for (int i = 0; i < constraints.size(); ++i)
+	{
+		b2ContactPositionConstraint* pc = &constraints[i];
+
+		p2Vec2 localCenterA = pc->localCenterA;
+		float mA = pc->invMassA;
+		float iA = pc->invIA;
+		p2Vec2 localCenterB = pc->localCenterB;
+		float mB = pc->invMassB;
+		float iB = pc->invIB;
+		int pointCount = pc->pointCount;
+
+		p2Vec2 cA = m_positions[indexA].c;
+		float aA = m_positions[indexA].a;
+
+		p2Vec2 cB = m_positions[indexB].c;
+		float aB = m_positions[indexB].a;
+
+		// Solve normal constraints
+		for (int j = 0; j < pointCount; ++j)
+		{
+			p2Transform xfA, xfB;
+			xfA.rotation.Set(aA);
+			xfB.rotation.Set(aB);
+			xfA.position = cA - b2Mul(xfA.rotation, localCenterA);
+			xfB.position = cB - b2Mul(xfB.rotation, localCenterB);
+
+			b2PositionSolverManifold psm;
+			psm.Initialize(pc, xfA, xfB, j);
+			p2Vec2 normal = psm.normal;
+
+			p2Vec2 point = psm.point;
+			float separation = psm.separation;
+
+			p2Vec2 rA = point - cA;
+			p2Vec2 rB = point - cB;
+
+			// Track max constraint error.
+			minSeparation = p2Min(minSeparation, separation);
+
+			// Prevent large corrections and allow slop.
+			float C = p2Clamp(p2_baumgarte * (separation + p2_linearSlop), -p2_maxLinearCorrection, 0.0f);
+
+			// Compute the effective mass.
+			float rnA = p2Cross(rA, normal);
+			float rnB = p2Cross(rB, normal);
+			float K = mA + mB + iA * rnA * rnA + iB * rnB * rnB;
+
+			// Compute normal impulse
+			float impulse = K > 0.0f ? -C / K : 0.0f;
+
+			p2Vec2 P = impulse * normal;
+
+			cA -= mA * P;
+			aA -= iA * p2Cross(rA, P);
+
+			cB += mB * P;
+			aB += iB * p2Cross(rB, P);
+		}
+
+		m_positions[indexA].c = cA;
+		m_positions[indexA].a = aA;
+
+		m_positions[indexB].c = cB;
+		m_positions[indexB].a = aB;
+	}
+
+	// We can't expect minSpeparation >= -b2_linearSlop because we don't
+	// push the separation above -b2_linearSlop.
+	return minSeparation >= -3.0f * p2_linearSlop;
+}
+
 void p2World::Step(float step)
 {
 	std::vector<p2Contact> contacts = contactManager.GetContacts(shapes);
 
-	std::vector<b2ContactVelocityConstraint> constraints;
-	InitalizeVelocityConstraints(contacts, constraints);
-
+	std::vector<b2ContactVelocityConstraint> constraintsVel;
+	std::vector<b2ContactPositionConstraint> constraintsPos;
+	InitalizePositionalVelocityConstraints(contacts, constraintsVel, constraintsPos);
 }

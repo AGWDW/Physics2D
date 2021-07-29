@@ -262,3 +262,14 @@ inline p2Vec2 p2Cross(float s, const p2Vec2& a)
 {
 	return p2Vec2(-s * a.y, s * a.x);
 }
+
+
+inline p2Vec2 p2Clamp(const p2Vec2& a, const p2Vec2& low, const p2Vec2& high)
+{
+	return p2Max(low, p2Min(a, high));
+}
+
+inline float p2Clamp(const float& a, const float& low, const float& high)
+{
+	return p2Max(low, p2Min(a, high));
+}
